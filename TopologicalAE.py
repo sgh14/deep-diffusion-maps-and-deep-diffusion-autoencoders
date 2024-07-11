@@ -24,10 +24,12 @@ class TopologicalAE:
         """
         # Set up the encoder
         self.encoder = encoder
+        self.encoder._name = 'encoder'
         self.encoder.summary()
 
         # Set up the decoder
         self.decoder = decoder
+        self.decoder._name = 'decoder'
         self.decoder.summary()
 
         # Construct the full autoencoder
