@@ -1,4 +1,5 @@
 from TopologicalAE import TopologicalAE
+from DiffusionLoss import DiffusionLoss
 
 
 class DeepDiffusionAE(TopologicalAE):
