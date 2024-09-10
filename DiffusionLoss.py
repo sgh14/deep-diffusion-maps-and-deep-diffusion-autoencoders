@@ -17,8 +17,9 @@ class DiffusionLoss(TopologicalLoss):
         self,
         X,
         sigma=None,
-        t=1,
+        step=1,
         kernel='rbf',
+        alpha=1,
         precomputed_distances=False,
         name="diffusion_loss"
     ):
@@ -28,7 +29,7 @@ class DiffusionLoss(TopologicalLoss):
         Args:
             X (np.array): The input data or precomputed distances.
             sigma (float, optional): The bandwidth parameter for the kernel. Defaults to None.
-            t (int, optional): The number of time steps for the diffusion process. Defaults to 1.
+            step (int, optional): The number of time steps for the diffusion process. Defaults to 1.
             kernel (str, optional): The type of kernel to use ('rbf' or 'laplacian'). Defaults to 'rbf'.
             precomputed_distances (bool, optional): Whether X contains precomputed distances. Defaults to False.
             name (str, optional): Name of the loss function. Defaults to "diffusion_loss".
@@ -38,17 +39,18 @@ class DiffusionLoss(TopologicalLoss):
             D = X
         else:
             # Compute the kernel matrix
-            K = self.get_kernel(X, X, sigma, kernel)
+            K = self.get_kernel(X, X, sigma, kernel, alpha)
             # Compute diffusion probabilities and degree vector
-            P, d = self.diffusion_probabilities(K, sigma, t)
+            P, d = self.diffusion_probabilities(K, step)
             # Compute diffusion distances
             D = self.diffusion_distances(P, d)
         
         super().__init__(D=D, name=name)
 
+
     @staticmethod
     @njit
-    def get_kernel(X, Y, sigma, kernel):
+    def get_kernel(X, Y, sigma, kernel, alpha):
         """
         Compute the kernel matrix.
 
@@ -69,17 +71,24 @@ class DiffusionLoss(TopologicalLoss):
         else:
             raise ValueError("Unsupported kernel")
 
-        return K
+        # Compute 1/d_i^alpha as a diagonal matrix
+        D_i_inv = np.diag(np.sum(K, axis=1) ** (-alpha))
+        # Compute 1/d_i^alpha as a diagonal matrix
+        D_j_inv = np.diag(np.sum(K, axis=0) ** (-alpha))
+        # Compute k_ij/(d_i^alpha * d_j^alpha)
+        K_alpha = D_i_inv @ K @ D_j_inv
+
+        return K_alpha
+    
 
     @staticmethod
     @njit
-    def diffusion_probabilities(K, sigma, t=1):
+    def diffusion_probabilities(K, step=1):
         """
         Compute diffusion probabilities.
 
         Args:
             K (np.array): Kernel matrix.
-            sigma (float): Bandwidth parameter (not used in this method, but kept for consistency).
             t (int, optional): Number of time steps. Defaults to 1.
 
         Returns:
@@ -92,10 +101,11 @@ class DiffusionLoss(TopologicalLoss):
         # Compute transition probability matrix
         P = D_inv @ K
         # Compute P^t if t > 1
-        if t > 1:
-            P = np.linalg.matrix_power(P, t)
+        if step > 1:
+            P = np.linalg.matrix_power(P, step)
 
         return P, d
+
 
     @staticmethod
     @njit
