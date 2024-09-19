@@ -68,3 +68,5 @@ history = diffusionae.fit(X, epochs=1000, batch_size=512, shuffle=True, validati
 X_red = diffusionae.encode(X)
 X_rec = diffusionae.decode(X_red)
 ```
+
+## Experiments
