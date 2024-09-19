@@ -42,7 +42,7 @@ for diffusion_weight in diffusion_weights:
         decoder = build_decoder(output_shape=(X_train.shape[-1],), units=128, n_components=2)
         autoencoder = DeepDiffusionAE(encoder, decoder)
         autoencoder.compile(X_train, sigma=sigma, steps=steps, kernel=kernel, alpha=alpha, diffusion_weight=diffusion_weight, optimizer='adam')
-        history = autoencoder.fit(X_train, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+        history = autoencoder.fit(X_train, epochs=300, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
 
         X_train_red = autoencoder.encode(X_train)
         X_test_red = autoencoder.encode(X_test)
