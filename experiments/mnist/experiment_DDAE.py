@@ -62,26 +62,26 @@ for diffusion_weight in diffusion_weights:
         X_train_rec = X_train_rec.numpy().reshape((X_train_rec.shape[0], *img_shape))
         X_test_rec = X_test_rec.numpy().reshape((X_test_rec.shape[0], *img_shape))
 
-        plot_projection(X_train_red, y_train, title, path.join(root, 'train_red'))
-    plot_original(
-        X_train_rec, y_train, title,
-        path.join(root, 'train_rec'),
-        images_per_class=2, grid_shape=(3, 4)
-    )
-    plot_projection(X_test_red, y_test, title, path.join(root, 'test_red'))
-    plot_original(
-        X_test_rec, y_test, title,
-        path.join(root, 'test_rec'),
-        images_per_class=2, grid_shape=(3, 4)
-    )
-    plot_interpolations(
-        X_test_red, y_test, title,
-        decoder,
-        path.join(root, 'test_interp'),
-        img_shape,
-        class_pairs = [(i, i+1) for i in range(0, 6, 2)],
-        n_interpolations=4
-    )
-    plot_history(history, path.join(root, experiment, 'histories', title), log_scale=True)
+        plot_projection(X_train_red, y_train, title, path.join(root, experiment, 'train_red'))
+        plot_original(
+            X_train_rec, y_train, title,
+            path.join(root, experiment, 'train_rec'),
+            images_per_class=2, grid_shape=(3, 4)
+        )
+        plot_projection(X_test_red, y_test, title, path.join(root, experiment, 'test_red'))
+        plot_original(
+            X_test_rec, y_test, title,
+            path.join(root, experiment, 'test_rec'),
+            images_per_class=2, grid_shape=(3, 4)
+        )
+        plot_interpolations(
+            X_test_red, y_test, title,
+            decoder,
+            path.join(root, experiment, 'test_interp'),
+            img_shape,
+            class_pairs = [(i, i+1) for i in range(0, 6, 2)],
+            n_interpolations=4
+        )
+        plot_history(history, path.join(root, experiment, 'histories', title), log_scale=True)
 
-    compute_metrics(X_test, X_test_red, X_test_rec, y_test, title, root)        
+        compute_metrics(X_test, X_test_red, X_test_rec, y_test, title, path.join(root, experiment))        
