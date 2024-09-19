@@ -17,7 +17,7 @@ class DiffusionLoss(TopologicalLoss):
         self,
         X,
         sigma=None,
-        step=1,
+        steps=1,
         kernel='rbf',
         alpha=1,
         precomputed_distances=False,
@@ -29,8 +29,9 @@ class DiffusionLoss(TopologicalLoss):
         Args:
             X (np.array): The input data or precomputed distances.
             sigma (float, optional): The bandwidth parameter for the kernel. Defaults to None.
-            step (int, optional): The number of time steps for the diffusion process. Defaults to 1.
+            steps (int, optional): The number of time steps for the diffusion process. Defaults to 1.
             kernel (str, optional): The type of kernel to use ('rbf' or 'laplacian'). Defaults to 'rbf'.
+            alpha (float, optional): Normalization factor. Defaults to 1.
             precomputed_distances (bool, optional): Whether X contains precomputed distances. Defaults to False.
             name (str, optional): Name of the loss function. Defaults to "diffusion_loss".
         """
@@ -41,7 +42,7 @@ class DiffusionLoss(TopologicalLoss):
             # Compute the kernel matrix
             K = self.get_kernel(X, X, sigma, kernel, alpha)
             # Compute diffusion probabilities and degree vector
-            P, d = self.diffusion_probabilities(K, step)
+            P, d = self.diffusion_probabilities(K, steps)
             # Compute diffusion distances
             D = self.diffusion_distances(P, d)
         
@@ -59,6 +60,7 @@ class DiffusionLoss(TopologicalLoss):
             Y (np.array): Second set of points.
             sigma (float): Bandwidth parameter.
             kernel (str): Type of kernel ('rbf' or 'laplacian').
+            alpha (float): Normalization factor.
 
         Returns:
             np.array: The computed kernel matrix.
@@ -83,7 +85,7 @@ class DiffusionLoss(TopologicalLoss):
 
     @staticmethod
     @njit
-    def diffusion_probabilities(K, step=1):
+    def diffusion_probabilities(K, steps=1):
         """
         Compute diffusion probabilities.
 
@@ -101,8 +103,8 @@ class DiffusionLoss(TopologicalLoss):
         # Compute transition probability matrix
         P = D_inv @ K
         # Compute P^t if t > 1
-        if step > 1:
-            P = np.linalg.matrix_power(P, step)
+        if steps > 1:
+            P = np.linalg.matrix_power(P, steps)
 
         return P, d
 

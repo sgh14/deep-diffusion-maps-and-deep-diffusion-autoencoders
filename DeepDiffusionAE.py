@@ -9,7 +9,7 @@ class DeepDiffusionAE(TopologicalAE):
 
     Methods
     -------
-    compile(X, sigma=None, t=1, kernel='rbf', precomputed_distances=False, diffusion_weight=1.0, **kwargs):
+    compile(X, sigma=None, steps=1, kernel='rbf', precomputed_distances=False, diffusion_weight=1.0, **kwargs):
         Compiles the autoencoder model with a specified diffusion loss.
     """
 
@@ -17,8 +17,9 @@ class DeepDiffusionAE(TopologicalAE):
         self,
         X,
         sigma=None,
-        t=1,
+        steps=1,
         kernel='rbf',
+        alpha=1,
         precomputed_distances=False,
         diffusion_weight=1.0,
         **kwargs
@@ -32,10 +33,12 @@ class DeepDiffusionAE(TopologicalAE):
             The input data used for calculating the diffusion loss.
         sigma : float, optional
             The bandwidth parameter for the RBF kernel. If None, it will be estimated.
-        t : int, optional
+        steps : int, optional
             The number of diffusion time steps.
         kernel : str, optional
             The type of kernel to use for diffusion (default is 'rbf').
+        alpha : float, optional (default=1)
+            Normalization factor.
         precomputed_distances : bool, optional
             If True, indicates that the distances are precomputed.
         diffusion_weight : float, optional
@@ -44,7 +47,14 @@ class DeepDiffusionAE(TopologicalAE):
             Additional keyword arguments passed to the compile method of the underlying autoencoder.
         """
         # Create an instance of DiffusionLoss with the provided parameters.
-        diffusion_loss = DiffusionLoss(X, sigma, t, kernel, precomputed_distances)
+        diffusion_loss = DiffusionLoss(
+            X,
+            sigma=sigma,
+            steps=steps,
+            kernel=kernel,
+            alpha=alpha,
+            precomputed_distances=precomputed_distances
+        )
         
         # Compile the autoencoder model with specified losses and loss weights.
         self.autoencoder.compile(
