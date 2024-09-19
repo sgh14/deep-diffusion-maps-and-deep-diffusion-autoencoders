@@ -58,7 +58,7 @@ class DeepDiffusionAE(TopologicalAE):
         
         # Compile the autoencoder model with specified losses and loss weights.
         self.autoencoder.compile(
-            loss={'encoder': diffusion_loss, 'decoder': 'mse'},  # Define loss for encoder and decoder.
-            loss_weights={'encoder': diffusion_weight, 'decoder': 1.0},  # Set loss weights for encoder and decoder.
+            loss=[diffusion_loss, 'mse'],  # Define loss for encoder and decoder.
+            loss_weights=[diffusion_weight, (1 - diffusion_weight)],  # Set loss weights for encoder and decoder.
             **kwargs  # Additional arguments passed to the compile method.
         )

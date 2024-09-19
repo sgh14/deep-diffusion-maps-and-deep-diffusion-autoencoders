@@ -24,19 +24,17 @@ class TopologicalAE:
         """
         # Set up the encoder
         self.encoder = encoder
-        self.encoder._name = 'encoder'
         self.encoder.summary()
-
+        
         # Set up the decoder
         self.decoder = decoder
-        self.decoder._name = 'decoder'
         self.decoder.summary()
 
         # Construct the full autoencoder
-        inputs = Input(shape=encoder.layers[0].input_shape[1:])
+        inputs = Input(shape=self.encoder.input_shape[1:])
         encoded = self.encoder(inputs)
         decoded = self.decoder(encoded)
-        self.autoencoder = Model(inputs, [encoded, decoded], name=name)
+        self.autoencoder = Model(inputs=inputs, outputs=[encoded, decoded], name=name)
         self.autoencoder.summary()
 
   
@@ -53,7 +51,7 @@ class TopologicalAE:
         """
         self.autoencoder.compile(
             loss={'encoder': TopologicalLoss(D), 'decoder': 'mse'},
-            loss_weights={'encoder': topological_weight, 'decoder': 1.0},
+            loss_weights={'encoder': topological_weight, 'decoder': (1 - topological_weight)},
             **kwargs
         )
 
@@ -71,11 +69,10 @@ class TopologicalAE:
         """
         # Generate indices for topological loss calculation
         indices = np.array(list(range(X.shape[0])))
-        
         # Train the model
         history = self.autoencoder.fit(
             x=X,
-            y={'encoder': indices, 'decoder': X},  # Use indices for encoder, original data for decoder
+            y=[indices, X],
             **kwargs
         )
 
