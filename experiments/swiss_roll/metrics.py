@@ -1,19 +1,53 @@
-import os
+from os import path
 import numpy as np
 import pandas as pd
+from sklearn.manifold import trustworthiness
 
 
 def compute_metrics(
-    X_orig,
-    X_rec,
+    X_train,
+    X_train_red,
+    X_train_rec,
+    X_test,
+    X_test_red,
+    X_test_rec,
+    time_in_sample,
+    time_out_of_sample,
     title,
     output_dir
 ):
-    results = {'title': [], 'rec_error': []}
-    rec_error = np.linalg.norm((X_orig - X_rec).numpy().flatten())
-    results['title'].append(title)
-    results['rec_error'].append(rec_error)
+    p = 0.01
+    metric = 'euclidean'
+    rec_error_in_sample = np.mean(np.linalg.norm(X_train - X_train_rec, axis=1))
+    rec_error_out_of_sample = np.mean(np.linalg.norm(X_test - X_test_rec, axis=1))
+    trustworthiness_in_sample = trustworthiness(X_train, X_train_red, n_neighbors=round(p*len(X_train)), metric=metric)
+    trustworthiness_out_of_sample = trustworthiness(X_test, X_test_red, n_neighbors=round(p*len(X_test)), metric=metric)
+    continuity_in_sample = trustworthiness(X_train_red, X_train, n_neighbors=round(p*len(X_train)), metric=metric)
+    continuity_out_of_sample = trustworthiness(X_test_red, X_test, n_neighbors=round(p*len(X_test)), metric=metric)
+
+    results = {
+        'title': [title],
+        'rec_error_in_sample': [rec_error_in_sample],
+        'rec_error_out_of_sample': [rec_error_out_of_sample],
+        'trustworthiness_in_sample': [trustworthiness_in_sample],
+        'trustworthiness_out_of_sample': [trustworthiness_out_of_sample],
+        'continuity_in_sample': [continuity_in_sample],
+        'continuity_out_of_sample': [continuity_out_of_sample],
+        'time_in_sample':[time_in_sample],
+        'time_out_of_sample':[time_out_of_sample]
+    }
     
-    # Save the results to a .txt file
     df = pd.DataFrame(results)
-    df.to_csv(os.path.join(output_dir, 'metrics-' + title + '.txt'), sep='\t', index=False)
+    df.to_csv(path.join(output_dir, 'metrics.txt'), sep='\t', index=False)
+
+    for (X, X_red, name) in ((X_train, X_train_red, 'train'), (X_test, X_test_red, 'test')):
+        curves = {'k': [], 'T': [], 'C': []}
+        k_vals = [1] + list(range(5, round(0.5*len(X)), 5))
+        for k in k_vals:
+            curves['k'].append(k)
+            curves['T'].append(trustworthiness(X, X_red, n_neighbors=k, metric=metric))
+            curves['C'].append(trustworthiness(X_red, X, n_neighbors=k, metric=metric))
+            
+        df = pd.DataFrame(curves)
+        df.to_csv(path.join(output_dir, 'metrics-curves-' + name + '.txt'), sep='\t', index=False)
+
