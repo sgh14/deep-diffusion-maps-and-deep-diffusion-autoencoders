@@ -1,9 +1,11 @@
-import os
+from os import path
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import confusion_matrix
 from scipy.optimize import linear_sum_assignment
+from sklearn.manifold import trustworthiness
+
 
 '''
 Purity measures the frequency of data belonging to the same cluster sharing the
@@ -38,31 +40,76 @@ def clustering_accuracy(y_true, y_pred):
 
 
 def compute_metrics(
-    X_orig,
-    X_red,
-    X_rec,
-    y,
+    X_train,
+    y_train,
+    X_train_red,
+    X_train_rec,
+    X_test,
+    y_test,
+    X_test_red,
+    X_test_rec,
+    time_in_sample,
+    time_out_of_sample,
     title,
     output_dir
 ):
-    results = {'title': [], 'purity': [], 'accuracy': [], 'rec_error': []}
-    n_classes = len(np.unique(y))
-    # Initialize K-Means with n_classes clusters
-    k_means = KMeans(n_clusters=n_classes)
-    # Fit K-Means to the reduced data
-    clusters = k_means.fit_predict(X_red)
-    # Calculate the purity of the resulting clusters
-    clusters_purity = purity_score(y, clusters)
-    # Calculate the accuracy of the resulting clusters
-    clusters_accuracy = clustering_accuracy(y, clusters)
-    # Reconstruction error
-    rec_error = np.linalg.norm(X_orig.flatten() - X_rec.flatten())
-
-    results['title'].append(title)
-    results['purity'].append(clusters_purity)
-    results['accuracy'].append(clusters_accuracy)
-    results['rec_error'].append(rec_error)
+    X_train = X_train.reshape(X_train.shape[0], -1)
+    X_train_rec = X_train_rec.reshape(X_train_rec.shape[0], -1)
+    X_test = X_test.reshape(X_test.shape[0], -1)
+    X_test_rec = X_test_rec.reshape(X_test_rec.shape[0], -1)
     
-    # Save the results to a .txt file
+    p = 0.01
+    metric = 'euclidean'
+    rec_error_in_sample = np.mean(np.linalg.norm(X_train - X_train_rec, axis=1))
+    rec_error_out_of_sample = np.mean(np.linalg.norm(X_test - X_test_rec, axis=1))
+    trustworthiness_in_sample = trustworthiness(X_train, X_train_red, n_neighbors=round(p*len(X_train)), metric=metric)
+    trustworthiness_out_of_sample = trustworthiness(X_test, X_test_red, n_neighbors=round(p*len(X_test)), metric=metric)
+    continuity_in_sample = trustworthiness(X_train_red, X_train, n_neighbors=round(p*len(X_train)), metric=metric)
+    continuity_out_of_sample = trustworthiness(X_test_red, X_test, n_neighbors=round(p*len(X_test)), metric=metric)
+
+    n_classes = len(np.unique(y_train))
+    k_means = KMeans(n_clusters=n_classes)
+    clusters = k_means.fit_predict(X_train_red)
+    purity_in_sample = purity_score(y_train, clusters)
+    accuracy_in_sample = clustering_accuracy(y_train, clusters)
+
+    n_classes = len(np.unique(y_test))
+    k_means = KMeans(n_clusters=n_classes)
+    clusters = k_means.fit_predict(X_test_red)
+    purity_out_of_sample = purity_score(y_test, clusters)
+    accuracy_out_of_sample = clustering_accuracy(y_test, clusters)
+
+    results = {
+        'title': [title],
+        'rec_error_in_sample': [rec_error_in_sample],
+        'rec_error_out_of_sample': [rec_error_out_of_sample],
+        'trustworthiness_in_sample': [trustworthiness_in_sample],
+        'trustworthiness_out_of_sample': [trustworthiness_out_of_sample],
+        'continuity_in_sample': [continuity_in_sample],
+        'continuity_out_of_sample': [continuity_out_of_sample],
+        'time_in_sample':[time_in_sample],
+        'time_out_of_sample':[time_out_of_sample],
+        'purity_in_sample': [purity_in_sample],
+        'purity_out_of_sample': [purity_out_of_sample],
+        'accuracy_in_sample': [accuracy_in_sample],
+        'accuracy_out_of_sample': [accuracy_out_of_sample],
+    }
+    
     df = pd.DataFrame(results)
-    df.to_csv(os.path.join(output_dir, 'metrics-' + title + '.txt'), sep='\t', index=False)
+    df.to_csv(path.join(output_dir, 'metrics.txt'), sep='\t', index=False)
+
+    for (X, X_red, name) in ((X_train, X_train_red, 'train'), (X_test, X_test_red, 'test')):
+        curves = {'k': [], 'T': [], 'C': []}
+        k_vals = [1] + list(range(5, round(0.5*len(X)), 5))
+        for k in k_vals:
+            curves['k'].append(k)
+            curves['T'].append(trustworthiness(X, X_red, n_neighbors=k, metric=metric))
+            curves['C'].append(trustworthiness(X_red, X, n_neighbors=k, metric=metric))
+            
+        df = pd.DataFrame(curves)
+        df.to_csv(path.join(output_dir, 'metrics-curves-' + name + '.txt'), sep='\t', index=False)
+
+
+
+
+

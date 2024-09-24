@@ -14,7 +14,21 @@ def my_colormap1D(x):
     return color
 
 
-def plot_original(X, y, title, output_dir):
+def my_colormap2D(x, y):
+    # Define colors in RGB
+    bottom_left = (0.5, 0, 0.5) # dark magenta
+    bottom_right = (0, 0.5, 0.5) # dark cyan
+    top_left = (1, 0, 1) # magenta
+    top_right = (0, 1, 1) # cyan
+
+    # Calculate the RGB values based on interpolation
+    top_color = np.array(top_left) * (1 - x) + np.array(top_right) * x
+    bottom_color = np.array(bottom_left) * (1 - x) + np.array(bottom_right) * x
+
+    return top_color * (1 - y) + bottom_color * y
+
+
+def plot_original(X, y, output_dir, filename):
     os.makedirs(output_dir, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(3, 3), subplot_kw={"projection": "3d"})
@@ -30,12 +44,12 @@ def plot_original(X, y, title, output_dir):
     fig.tight_layout()
 
     for format in ('.pdf', '.png', '.svg'):
-        fig.savefig(os.path.join(output_dir, title + format))
+        fig.savefig(os.path.join(output_dir, filename + format))
 
     plt.close(fig)
 
 
-def plot_projection(X, y, title, output_dir):
+def plot_projection(X, y, output_dir, filename):
     os.makedirs(output_dir, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(3, 3), constrained_layout=True)
@@ -44,10 +58,9 @@ def plot_projection(X, y, title, output_dir):
     ax.set_xlabel(r'$\Tilde{x}$')
     ax.set_ylabel(r'$\Tilde{y}$')
     ax.set_box_aspect(1)
-    # fig.tight_layout()
 
     for format in ('.pdf', '.png', '.svg'):
-        fig.savefig(os.path.join(output_dir, title + format))
+        fig.savefig(os.path.join(output_dir, filename + format))
     
     plt.close(fig)
 

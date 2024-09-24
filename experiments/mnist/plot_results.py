@@ -35,8 +35,8 @@ def plot_images(axes, X, y=[]):
 def plot_original(
     X,
     y,
-    title,
     output_dir,
+    filename,
     images_per_class=2,
     grid_shape=(3, 4)
 ):
@@ -51,12 +51,12 @@ def plot_original(
     axes = plot_images(axes, X, y)
     fig.tight_layout()
     for format in ('.pdf', '.png', '.svg'):
-        fig.savefig(os.path.join(output_dir, title + format))
+        fig.savefig(os.path.join(output_dir, filename + format))
     
     plt.close(fig)
 
 
-def plot_projection(X, y, title, output_dir):
+def plot_projection(X, y, output_dir, filename):
     os.makedirs(output_dir, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(3, 3), constrained_layout=True)
@@ -73,10 +73,11 @@ def plot_projection(X, y, title, output_dir):
     labels = [str(val) for val in unique_y]  # Adjust labels based on your case
 
     # Add the legend below the plot, with ncol=number of unique y values for one-row legend
-    fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5), ncol=1) # loc='lower center', ncol=len(unique_y)//2, bbox_to_anchor=(0.5, -0.1))
+    # fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5), ncol=1) # loc='lower center', ncol=len(unique_y)//2, bbox_to_anchor=(0.5, -0.1))
+    fig.legend(handles, labels, loc='lower center', ncol=len(unique_y), handletextpad=0.2, columnspacing=0.5, bbox_to_anchor=(0.5, -0.1))
 
     for format in ('.pdf', '.png', '.svg'):
-        fig.savefig(os.path.join(output_dir, title + format))
+        fig.savefig(os.path.join(output_dir, filename + format))
     
     plt.close(fig)
 
@@ -120,16 +121,14 @@ def interpolate(x1, x2, n_interpolations=4):
     return np.array(interpolations)
 
 
-def interpolate_images(X_red, y, decoder, class_pairs, n_interpolations, image_shape):
+def interpolate_images(X_red, y, decoder, class_pairs, n_interpolations):
     centroids = compute_centroids(X_red, y)
     interpolated_images = []
     for class1, class2 in class_pairs:
         centroid1 = centroids[class1]
         centroid2 = centroids[class2]
         interpolations = interpolate(centroid1, centroid2, n_interpolations)
-        interpolated_images.append(
-            decoder(interpolations).numpy().reshape(-1, *image_shape)
-        )
+        interpolated_images.append(decoder(interpolations).numpy())
 
     interpolated_images = np.vstack(interpolated_images)
 
@@ -140,10 +139,9 @@ def interpolate_images(X_red, y, decoder, class_pairs, n_interpolations, image_s
 def plot_interpolations(
     X_red,
     y,
-    title,
     decoder,
     output_dir,
-    image_shape,
+    filename,
     class_pairs,
     n_interpolations=4
 ):
@@ -153,14 +151,14 @@ def plot_interpolations(
     fig, axes = plt.subplots(
         grid_shape[0], grid_shape[1],
         figsize=(3, 3),
-        gridspec_kw={'wspace': 0.2, 'hspace': 0}
+        gridspec_kw={'wspace': 0, 'hspace': 0}
     )
     X_interp = interpolate_images(
-            X_red, y, decoder, class_pairs, n_interpolations, image_shape
+            X_red, y, decoder, class_pairs, n_interpolations
     )
     axes = plot_images(axes, X_interp)
     fig.tight_layout()
     for format in ('.pdf', '.png', '.svg'):
-        fig.savefig(os.path.join(output_dir, title + format))
+        fig.savefig(os.path.join(output_dir, filename + format))
     
     plt.close(fig)
