@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import confusion_matrix
 from scipy.optimize import linear_sum_assignment
 from sklearn.manifold import trustworthiness
+import h5py
 
 
 '''
@@ -98,16 +99,24 @@ def compute_metrics(
     df = pd.DataFrame(results)
     df.to_csv(path.join(output_dir, 'metrics.txt'), sep='\t', index=False)
 
-    for (X, X_red, name) in ((X_train, X_train_red, 'train'), (X_test, X_test_red, 'test')):
-        curves = {'k': [], 'T': [], 'C': []}
-        k_vals = [1] + list(range(5, round(0.5*len(X)), 5))
-        for k in k_vals:
-            curves['k'].append(k)
-            curves['T'].append(trustworthiness(X, X_red, n_neighbors=k, metric=metric))
-            curves['C'].append(trustworthiness(X_red, X, n_neighbors=k, metric=metric))
+    # for (X, X_red, name) in ((X_train, X_train_red, 'train'), (X_test, X_test_red, 'test')):
+    #     curves = {'k': [], 'T': [], 'C': []}
+    #     k_vals = [1] + list(range(10, round(0.5*len(X)), 10))
+    #     for k in k_vals:
+    #         curves['k'].append(k)
+    #         curves['T'].append(trustworthiness(X, X_red, n_neighbors=k, metric=metric))
+    #         curves['C'].append(trustworthiness(X_red, X, n_neighbors=k, metric=metric))
             
-        df = pd.DataFrame(curves)
-        df.to_csv(path.join(output_dir, 'metrics-curves-' + name + '.txt'), sep='\t', index=False)
+    #     df = pd.DataFrame(curves)
+    #     df.to_csv(path.join(output_dir, 'metrics-curves-' + name + '.txt'), sep='\t', index=False)
 
-
+    with h5py.File(path.join(output_dir, 'results.h5'), "w") as file:
+        file.create_dataset("X_train", data=X_train, compression='gzip')
+        file.create_dataset("X_train_red", data=X_train_red, compression='gzip')
+        file.create_dataset("X_train_rec", data=X_train_rec, compression='gzip')
+        file.create_dataset("y_train", data=y_train, compression='gzip')
+        file.create_dataset("X_test", data=X_train, compression='gzip')
+        file.create_dataset("X_test_red", data=X_test_red, compression='gzip')
+        file.create_dataset("X_test_rec", data=X_test_rec, compression='gzip')
+        file.create_dataset("y_test", data=y_test, compression='gzip')
 
