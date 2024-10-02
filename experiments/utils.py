@@ -69,6 +69,7 @@ def build_conv_encoder(input_shape, filters, n_components, zero_padding):
         ConvBlock2D(filters*2),
         ConvBlock2D(filters*4),
         Flatten(),
+        Dense(16*n_components, activation='relu'),
         BatchNormalization(),
         Dense(n_components, activation='linear', use_bias = False)
     ], name='encoder')
@@ -124,7 +125,8 @@ def build_conv_decoder(output_shape, filters, n_components, cropping):
     
     decoder = Sequential([
         Input(shape=(n_components,)),  # Input is the same size as the encoder's output (latent space)
-        Dense(units=h * w * c, activation='relu'),  # Project back to spatial dimensions
+        Dense(units=16*n_components, activation='relu'),  
+        Dense(units=h * w * c, activation='relu'), # Project back to spatial dimensions
         Reshape((h, w, c)),  # Reshape back to feature map
         UpConvBlock2D(filters * 4),  # Reverse of ConvBlock(filters * 4)
         UpConvBlock2D(filters * 2),  # Reverse of ConvBlock(filters * 2)
