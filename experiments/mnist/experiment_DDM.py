@@ -21,11 +21,11 @@ titles = [
     'Many samples with noise'
 ]
 
-datasets_train, datasets_test = get_datasets(npoints=1000, test_size=0.1, seed=seed, noise=0.25)
+datasets_train, datasets_test = get_datasets(npoints=10000, test_size=0.1, seed=seed, noise=0.25)
 
-q_vals = [5e-3, 5e-3, 2.5e-3, 2.5e-3]
-steps_vals = [100, 100, 100, 100]
-alpha_vals = [1, 1, 1, 1]
+q_vals = [0.001, 0.0075, 0.0075, 0.0]
+steps_vals = [1, 1, 1, 1]
+alpha_vals = [0, 0, 0, 0]
 kernel = 'rbf'
 
 for i in range(len(titles)):
@@ -45,7 +45,7 @@ for i in range(len(titles)):
     loss = DiffusionLoss(X_train.reshape((X_train.shape[0], -1)), sigma=sigma, steps=steps, kernel=kernel, alpha=alpha)
     encoder.compile(optimizer='adam', loss=loss)
     indices = np.array(list(range(len(X_train))))
-    hist_enc = encoder.fit(X_train, indices, epochs=10, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+    hist_enc = encoder.fit(X_train, indices, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
     X_train_red = encoder(X_train)
     tac = time.perf_counter()
     X_test_red = encoder(X_test)
@@ -53,7 +53,7 @@ for i in range(len(titles)):
 
     decoder = build_conv_decoder(output_shape=X_train.shape[1:], filters=8, n_components=2, cropping=(2, 2))
     decoder.compile(optimizer='adam', loss='mse')
-    hist_dec = decoder.fit(X_train_red, X_train, epochs=10, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+    hist_dec = decoder.fit(X_train_red, X_train, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
     X_train_rec = decoder(X_train_red).numpy()
     X_test_rec = decoder(X_test_red).numpy()
 
@@ -70,23 +70,23 @@ for i in range(len(titles)):
         path.join(root, title), 'test_orig',
         images_per_class=2, grid_shape=(3, 4)
     )
-    plot_projection(X_train_red, y_train, path.join(root, title), 'train_red',)
+    plot_projection(X_train_red, y_train, path.join(root, title, experiment), 'train_red',)
     plot_original(
         X_train_rec, y_train,
-        path.join(root, title), 'train_rec',
+        path.join(root, title, experiment), 'train_rec',
         images_per_class=2, grid_shape=(3, 4)
     )
-    plot_projection(X_test_red, y_test, path.join(root, title), 'test_red',)
+    plot_projection(X_test_red, y_test, path.join(root, title, experiment), 'test_red',)
     plot_original(
         X_test_rec, y_test,
-        path.join(root, title), 'test_rec',
+        path.join(root, title, experiment), 'test_rec',
         images_per_class=2, grid_shape=(3, 4)
     )
     plot_interpolations(
         X_train_red,
         y_train,
         decoder,
-        path.join(root, title),
+        path.join(root, title, experiment),
         'train_interp',
         class_pairs = [(i, i+1) for i in range(0, 5)],
         n_interpolations=6
@@ -95,7 +95,7 @@ for i in range(len(titles)):
         X_test_red,
         y_test,
         decoder,
-        path.join(root, title),
+        path.join(root, title, experiment),
         'test_interp',
         class_pairs = [(i, i+1) for i in range(0, 5)],
         n_interpolations=6
@@ -115,5 +115,5 @@ for i in range(len(titles)):
         time_in_sample,
         time_out_of_sample,
         title,
-        output_dir=path.join(root, title)
+        output_dir=path.join(root, title, experiment)
     )

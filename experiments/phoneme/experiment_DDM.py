@@ -23,9 +23,9 @@ titles = [
 
 datasets_train, datasets_test = get_datasets(test_size=0.2, seed=seed, noise=0.25)
 
-q_vals = [1e-2, 1e-2, 1e-2, 1e-2]
-steps_vals = [100, 100, 100, 100]
-alpha_vals = [1, 1, 1, 1]
+q_vals = [0.75, 0.75, 0.75, 0.75]
+steps_vals = [1, 1, 1, 1]
+alpha_vals = [0, 0, 0, 0]
 kernel = 'rbf'
 
 for i in range(len(titles)):
@@ -42,7 +42,7 @@ for i in range(len(titles)):
     loss = DiffusionLoss(X_train.reshape((X_train.shape[0], -1)), sigma=sigma, steps=steps, kernel=kernel, alpha=alpha)
     encoder.compile(optimizer='adam', loss=loss)
     indices = np.array(list(range(len(X_train))))
-    hist_enc = encoder.fit(X_train, indices, epochs=500, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+    hist_enc = encoder.fit(X_train, indices, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
     X_train_red = encoder(X_train)
     tac = time.perf_counter()
     X_test_red = encoder(X_test)
@@ -50,7 +50,7 @@ for i in range(len(titles)):
 
     decoder = build_seq_decoder(output_shape=X_train.shape[1:], filters=8, n_components=2, cropping=0)
     decoder.compile(optimizer='adam', loss='mse')
-    hist_dec = decoder.fit(X_train_red, X_train, epochs=500, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+    hist_dec = decoder.fit(X_train_red, X_train, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
     X_train_rec = decoder(X_train_red).numpy()
     X_test_rec = decoder(X_test_red).numpy()
 

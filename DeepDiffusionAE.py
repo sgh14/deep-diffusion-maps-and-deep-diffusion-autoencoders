@@ -1,4 +1,6 @@
-from TopologicalAE import TopologicalAE
+from tensorflow.keras.losses import MeanSquaredError
+
+from TopologicalAE import TopologicalAE, LossNormalizer
 from DiffusionLoss import DiffusionLoss
 
 
@@ -22,6 +24,7 @@ class DeepDiffusionAE(TopologicalAE):
         alpha=1,
         precomputed_distances=False,
         diffusion_weight=1.0,
+        beta=0.9,
         **kwargs
     ):
         """
@@ -55,10 +58,15 @@ class DeepDiffusionAE(TopologicalAE):
             alpha=alpha,
             precomputed_distances=precomputed_distances
         )
-        
-        # Compile the autoencoder model with specified losses and loss weights.
+
         self.autoencoder.compile(
-            loss=[diffusion_loss, 'mse'],  # Define loss for encoder and decoder.
-            loss_weights=[diffusion_weight, (1 - diffusion_weight)],  # Set loss weights for encoder and decoder.
-            **kwargs  # Additional arguments passed to the compile method.
+            loss=[
+                LossNormalizer(diffusion_loss, beta),
+                LossNormalizer(MeanSquaredError(), beta)
+            ],
+            loss_weights=[
+                diffusion_weight,
+                (1 - diffusion_weight)
+            ],
+            **kwargs
         )

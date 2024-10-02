@@ -1,7 +1,30 @@
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
+from tensorflow.keras.losses import Loss, MeanSquaredError
 from TopologicalLoss import TopologicalLoss
+
+
+class LossNormalizer(Loss):
+    def __init__(self, loss_fn, beta=0.9, **kwargs):
+        super(LossNormalizer, self).__init__(**kwargs)
+        self.loss_fn = loss_fn
+        self.beta = beta
+        self.loss_mean = tf.Variable(1.0, trainable=False)  # For scaling
+    
+    def call(self, y_true, y_pred):
+        # Compute the loss
+        loss = self.loss_fn(y_true, y_pred)
+        # Detach the rolling mean (no gradient update)
+        detached_loss_mean = tf.stop_gradient(self.loss_mean)
+        # Dynamically normalize the loss
+        normalized_loss = loss / (detached_loss_mean + 1e-8)
+        # Update running mean
+        loss_new_mean = self.beta*self.loss_mean + (1 - self.beta)*tf.reduce_mean(loss)
+        self.loss_mean.assign(loss_new_mean)
+        
+        return normalized_loss
 
 
 class TopologicalAE:
@@ -38,7 +61,7 @@ class TopologicalAE:
         self.autoencoder.summary()
 
   
-    def compile(self, D, topological_weight=1.0, **kwargs):
+    def compile(self, D, topological_weight=1.0, beta=0.9, **kwargs):
         """
         Compile the autoencoder model.
 
@@ -50,8 +73,14 @@ class TopologicalAE:
             **kwargs: Additional arguments to pass to the Keras compile method.
         """
         self.autoencoder.compile(
-            loss={'encoder': TopologicalLoss(D), 'decoder': 'mse'},
-            loss_weights={'encoder': topological_weight, 'decoder': (1 - topological_weight)},
+            loss=[
+                LossNormalizer(TopologicalLoss(D), beta),
+                LossNormalizer(MeanSquaredError(), beta)
+            ],
+            loss_weights=[
+                topological_weight,
+                (1 - topological_weight)
+            ],
             **kwargs
         )
 

@@ -20,7 +20,7 @@ titles = [
     'Few samples with noise',
     'Many samples with noise'
 ]
-datasets_train, datasets_test = get_datasets(npoints=2000, test_size=0.5, seed=123, noise=0.5)
+datasets_train, datasets_test = get_datasets(npoints=2000, test_size=0.5, seed=123, noise=0.75)
 
 q_vals = [5e-3, 5e-3, 2.5e-3, 2.5e-3]
 steps_vals = [100, 100, 100, 100]
