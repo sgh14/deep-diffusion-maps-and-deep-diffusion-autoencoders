@@ -63,8 +63,8 @@ def plot_projection(X, y, output_dir, filename):
     ax.scatter(X[:, 0], X[:, 1], c=[colors[i] for i in y])#y, cmap=cmap)
     ax.ticklabel_format(axis='both', style='sci', scilimits=(-2, 2), useMathText=True)
     # Set box aspect ratio instead of axis aspect to ensure square subplots
-    ax.set_xlabel(r'$\Tilde{x}$')
-    ax.set_ylabel(r'$\Tilde{y}$')
+    ax.set_xlabel(r'$\tilde{x}$')
+    ax.set_ylabel(r'$\tilde{y}$')
     ax.set_box_aspect(1)
 
     # Create a list of handles and labels for the legend

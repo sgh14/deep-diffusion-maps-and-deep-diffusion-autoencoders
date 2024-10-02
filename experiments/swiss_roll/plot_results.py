@@ -55,8 +55,8 @@ def plot_projection(X, y, output_dir, filename):
     fig, ax = plt.subplots(figsize=(3, 3), constrained_layout=True)
     ax.scatter(X[:, 0], X[:, 1], c=y)
     ax.ticklabel_format(axis='both', style='sci', scilimits=(-1, 1), useMathText=True)
-    ax.set_xlabel(r'$\Tilde{x}$')
-    ax.set_ylabel(r'$\Tilde{y}$')
+    ax.set_xlabel(r'$\tilde{x}$')
+    ax.set_ylabel(r'$\tilde{y}$')
     ax.set_box_aspect(1)
 
     for format in ('.pdf', '.png', '.svg'):
