@@ -43,8 +43,8 @@ for diffusion_weight in diffusion_weights:
         sigma = get_sigma(X_train.reshape((X_train.shape[0], -1)), q)
         
         print(experiment, '-', title)  
-        encoder = build_conv_encoder(input_shape=X_train.shape[1:], filters=8, n_components=2, zero_padding=(2, 2))
-        decoder = build_conv_decoder(output_shape=X_train.shape[1:], filters=8, n_components=2, cropping=(2, 2))
+        encoder = build_conv_encoder(input_shape=X_train.shape[1:], filters=8, n_components=2, zero_padding=(2, 2), dropout=0.2)
+        decoder = build_conv_decoder(output_shape=X_train.shape[1:], filters=8, n_components=2, cropping=(2, 2), dropout=0.2)
         autoencoder = DeepDiffusionAE(encoder, decoder)
         tic = time.perf_counter()
         autoencoder.compile(

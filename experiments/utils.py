@@ -61,13 +61,13 @@ class ConvBlock2D(Layer):
         return x
 
 
-def build_conv_encoder(input_shape, filters, n_components, zero_padding):
+def build_conv_encoder(input_shape, filters, n_components, zero_padding=(0, 0), dropout=0.0):
     encoder = Sequential([
         Input(shape=input_shape),
         ZeroPadding2D(zero_padding),
-        ConvBlock2D(filters),
-        ConvBlock2D(filters*2),
-        ConvBlock2D(filters*4),
+        ConvBlock2D(filters, dropout=dropout),
+        ConvBlock2D(filters*2, dropout=dropout),
+        ConvBlock2D(filters*4, dropout=dropout),
         Flatten(),
         Dense(16*n_components, activation='relu'),
         BatchNormalization(),
@@ -117,7 +117,7 @@ class UpConvBlock2D(Layer):
         return x
     
 
-def build_conv_decoder(output_shape, filters, n_components, cropping):
+def build_conv_decoder(output_shape, filters, n_components, cropping=(0, 0), dropout=0.0):
     # Calculate the final spatial dimensions of the encoded feature map (reverse of Flatten)
     h = (output_shape[0] + 2*cropping[0]) // 8
     w = (output_shape[1] + 2*cropping[1]) // 8
@@ -128,9 +128,9 @@ def build_conv_decoder(output_shape, filters, n_components, cropping):
         Dense(units=16*n_components, activation='relu'),  
         Dense(units=h * w * c, activation='relu'), # Project back to spatial dimensions
         Reshape((h, w, c)),  # Reshape back to feature map
-        UpConvBlock2D(filters * 4),  # Reverse of ConvBlock(filters * 4)
-        UpConvBlock2D(filters * 2),  # Reverse of ConvBlock(filters * 2)
-        UpConvBlock2D(filters),      # Reverse of ConvBlock(filters)
+        UpConvBlock2D(filters * 4, dropout=dropout),  # Reverse of ConvBlock(filters * 4)
+        UpConvBlock2D(filters * 2, dropout=dropout),  # Reverse of ConvBlock(filters * 2)
+        UpConvBlock2D(filters, dropout=dropout),      # Reverse of ConvBlock(filters)
         Conv2D(output_shape[-1], kernel_size=(1, 1), activation='sigmoid', padding='same'),  # Output layer
         Cropping2D(cropping)
     ], name='decoder')
@@ -172,13 +172,13 @@ class ConvBlock1D(Layer):
         return x
 
 
-def build_seq_encoder(input_shape, filters, n_components, zero_padding):
+def build_seq_encoder(input_shape, filters, n_components, zero_padding=0, dropout=0.0):
     encoder = Sequential([
         Input(shape=input_shape),
         ZeroPadding1D(zero_padding),
-        ConvBlock1D(filters),
-        ConvBlock1D(filters*2),
-        ConvBlock1D(filters*4),
+        ConvBlock1D(filters, dropout=dropout),
+        ConvBlock1D(filters*2, dropout=dropout),
+        ConvBlock1D(filters*4, dropout=dropout),
         Flatten(),
         BatchNormalization(),
         Dense(n_components, activation='linear', use_bias = False)
@@ -227,7 +227,7 @@ class UpConvBlock1D(Layer):
         return x
     
 
-def build_seq_decoder(output_shape, filters, n_components, cropping):
+def build_seq_decoder(output_shape, filters, n_components, cropping=0, dropout=0.0):
     l = (output_shape[0] + 2*cropping) // 8
     c = filters * 4
     
@@ -235,9 +235,9 @@ def build_seq_decoder(output_shape, filters, n_components, cropping):
         Input(shape=(n_components,)),  # Input is the same size as the encoder's output (latent space)
         Dense(units= l * c, activation='relu'),  # Project back to spatial dimensions
         Reshape((l, c)),  # Reshape back to feature map
-        UpConvBlock1D(filters * 4),  # Reverse of ConvBlock(filters * 4)
-        UpConvBlock1D(filters * 2),  # Reverse of ConvBlock(filters * 2)
-        UpConvBlock1D(filters),      # Reverse of ConvBlock(filters)
+        UpConvBlock1D(filters * 4, dropout=dropout),  # Reverse of ConvBlock(filters * 4)
+        UpConvBlock1D(filters * 2, dropout=dropout),  # Reverse of ConvBlock(filters * 2)
+        UpConvBlock1D(filters, dropout=dropout),      # Reverse of ConvBlock(filters)
         Conv1D(output_shape[-1], kernel_size=1, activation='linear', padding='same'),  # Output layer
         Cropping1D(cropping)
     ], name='decoder')
