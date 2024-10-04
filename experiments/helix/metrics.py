@@ -56,6 +56,6 @@ def compute_metrics(
         file.create_dataset("X_train", data=X_train, compression='gzip')
         file.create_dataset("X_train_red", data=X_train_red, compression='gzip')
         file.create_dataset("X_train_rec", data=X_train_rec, compression='gzip')
-        file.create_dataset("X_test", data=X_train, compression='gzip')
+        file.create_dataset("X_test", data=X_test, compression='gzip')
         file.create_dataset("X_test_red", data=X_test_red, compression='gzip')
         file.create_dataset("X_test_rec", data=X_test_rec, compression='gzip')
