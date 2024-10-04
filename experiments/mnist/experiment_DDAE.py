@@ -23,7 +23,7 @@ titles = [
 
 datasets_train, datasets_test = get_datasets(npoints=10000, test_size=0.1, seed=seed, noise=0.25)
 
-diffusion_weights = np.arange(0.0, 1.01, 0.05)
+diffusion_weights = np.arange(0.0, 1.01, 0.1)
 q_vals = [0.0075, 0.0075, 0.0075, 0.0075]
 steps_vals = [1, 1, 1, 1]
 alpha_vals = [0, 0, 0, 0]
