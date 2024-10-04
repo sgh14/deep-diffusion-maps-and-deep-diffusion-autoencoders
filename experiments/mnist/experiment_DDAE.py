@@ -57,7 +57,7 @@ for diffusion_weight in diffusion_weights:
             beta=0.9,
             optimizer='adam'
         )
-        history = autoencoder.fit(X_train, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+        history = autoencoder.fit(X_train, epochs=100, validation_split=0.1, shuffle=False, batch_size=64, verbose=0)
 
         X_train_red = autoencoder.encode(X_train)
         tac = time.perf_counter()

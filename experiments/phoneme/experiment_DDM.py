@@ -42,7 +42,7 @@ for i in range(len(titles)):
     loss = DiffusionLoss(X_train.reshape((X_train.shape[0], -1)), sigma=sigma, steps=steps, kernel=kernel, alpha=alpha)
     encoder.compile(optimizer='adam', loss=loss)
     indices = np.array(list(range(len(X_train))))
-    hist_enc = encoder.fit(X_train, indices, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+    hist_enc = encoder.fit(X_train, indices, epochs=50, validation_split=0.1, shuffle=False, batch_size=64, verbose=0)
     X_train_red = encoder(X_train)
     tac = time.perf_counter()
     X_test_red = encoder(X_test)
@@ -50,7 +50,7 @@ for i in range(len(titles)):
 
     decoder = build_seq_decoder(output_shape=X_train.shape[1:], filters=8, n_components=2, cropping=0)
     decoder.compile(optimizer='adam', loss='mse')
-    hist_dec = decoder.fit(X_train_red, X_train, epochs=50, validation_split=0.1, shuffle=True, batch_size=64, verbose=0)
+    hist_dec = decoder.fit(X_train_red, X_train, epochs=50, validation_split=0.1, shuffle=False, batch_size=64, verbose=0)
     X_train_rec = decoder(X_train_red).numpy()
     X_test_rec = decoder(X_test_red).numpy()
 
