@@ -68,10 +68,10 @@ for diffusion_weight in diffusion_weights:
         
         plot_original(X_train, y_train, path.join(root, title), 'train_orig')
         plot_original(X_test, y_test, path.join(root, title), 'test_orig')
-        plot_projection(X_train_red, y_train, path.join(root, title), 'train_red',)
-        plot_original(X_train_rec, y_train, path.join(root, title), 'train_rec')
-        plot_projection(X_test_red, y_test, path.join(root, title), 'test_red',)
-        plot_original(X_test_rec, y_test, path.join(root, title), 'test_rec')
+        plot_projection(X_train_red, y_train, path.join(root, title, experiment), 'train_red',)
+        plot_original(X_train_rec, y_train, path.join(root, title, experiment), 'train_rec')
+        plot_projection(X_test_red, y_test, path.join(root, title, experiment), 'test_red',)
+        plot_original(X_test_rec, y_test, path.join(root, title, experiment), 'test_rec')
         
         plot_history(history, path.join(root, 'histories', title, experiment), log_scale=True)
 
@@ -87,5 +87,5 @@ for diffusion_weight in diffusion_weights:
             time_in_sample,
             time_out_of_sample,
             title,
-            output_dir=path.join(root, title)
+            output_dir=path.join(root, title, experiment)
         )
