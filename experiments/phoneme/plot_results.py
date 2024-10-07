@@ -3,7 +3,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 plt.style.use('experiments/science.mplstyle')
-colors = ['#0C5DA5', '#00B945', '#FF9500', '#FF2C00', '#845B97', '#474747', '#9e9e9e']
+colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 classes = {0: 'aa', 1: 'ao', 2: 'dcl', 3: 'iy', 4: 'sh'}
 
 def plot_original(X, y, output_dir, filename, n_samples=30):
