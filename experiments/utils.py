@@ -28,12 +28,8 @@ def build_decoder(output_shape, units, n_components, activation='relu'):
 
 
 class ConvBlock2D(Layer):
-    def __init__(
-        self,
-        filters,
-        dropout=0.0
-    ):
-        super(ConvBlock2D, self).__init__()
+    def __init__(self, filters, dropout=0.0, **kwargs):
+        super(ConvBlock2D, self).__init__(**kwargs)
         self.conv1 = Conv2D(
             filters,
             kernel_size=(3, 3),
@@ -78,12 +74,8 @@ def build_conv_encoder(input_shape, filters, n_components, zero_padding=(0, 0), 
 
 
 class UpConvBlock2D(Layer):
-    def __init__(
-        self,
-        filters,
-        dropout=0.0
-    ):
-        super(UpConvBlock2D, self).__init__()
+    def __init__(self, filters, dropout=0.0, **kwargs):
+        super(UpConvBlock2D, self).__init__(**kwargs)
 
         self.conv_transpose = Conv2DTranspose(
             filters,
@@ -139,12 +131,8 @@ def build_conv_decoder(output_shape, filters, n_components, cropping=(0, 0), dro
 
 
 class ConvBlock1D(Layer):
-    def __init__(
-        self,
-        filters,
-        dropout=0.0
-    ):
-        super(ConvBlock1D, self).__init__()
+    def __init__(self, filters, dropout=0.0, **kwargs):
+        super(ConvBlock1D, self).__init__(**kwargs)
         self.conv1 = Conv1D(
             filters,
             kernel_size=3,
@@ -188,12 +176,8 @@ def build_seq_encoder(input_shape, filters, n_components, zero_padding=0, dropou
 
 
 class UpConvBlock1D(Layer):
-    def __init__(
-        self,
-        filters,
-        dropout=0.0
-    ):
-        super(UpConvBlock1D, self).__init__()
+    def __init__(self, filters, dropout=0.0, **kwargs):
+        super(UpConvBlock1D, self).__init__(**kwargs)
 
         self.conv_transpose = Conv1DTranspose(
             filters,

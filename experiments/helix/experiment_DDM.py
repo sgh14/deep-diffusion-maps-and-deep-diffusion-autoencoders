@@ -1,18 +1,25 @@
-import numpy as np
 import time
+import numpy as np
 import tensorflow as tf
+import os
+import random
 from os import path
+import h5py
 
 from DiffusionLoss import DiffusionLoss
 from aux_functions import get_sigma
-from experiments.helix.plot_results import plot_original, plot_projection, plot_history
 from experiments.helix.load_data import get_datasets
 from experiments.utils import build_encoder, build_decoder
-from experiments.helix.metrics import compute_metrics
 
-
+# ENSURE REPRODUCIBILITY
 seed = 123
+os.environ['PYTHONHASHSEED'] = str(seed)
+random.seed(seed)
+np.random.seed(seed)
 tf.random.set_seed(seed)
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # force the use of CPU
+
+
 root = 'experiments/helix/results/DDM'
 titles = [
     'Few samples without noise',
@@ -20,7 +27,7 @@ titles = [
     'Few samples with noise',
     'Many samples with noise'
 ]
-datasets_train, datasets_test = get_datasets(npoints=2000, test_size=0.5, seed=123, noise=0.1)
+datasets_train, datasets_test = get_datasets(npoints=2000, test_size=0.5, seed=seed, noise=0.1)
 
 q_vals = [2e-2, 2e-2, 5e-3, 5e-3]
 steps_vals = [100, 100, 100, 100]
@@ -28,11 +35,12 @@ alpha_vals = [1, 1, 1, 1]
 kernel = 'rbf'
 
 for i in range(len(titles)):
+    title = titles[i]
     q, steps, alpha = q_vals[i], steps_vals[i], alpha_vals[i]
-    experiment = f'percentile_{q}-steps_{steps}-alpha_{alpha}'
+    experiment = f'quantile_{q}-steps_{steps}-alpha_{alpha}'
+    output_dir = path.join(root, title, experiment)
     X_train, y_train = datasets_train[i]
     X_test, y_test = datasets_test[i]
-    title = titles[i]
     sigma = get_sigma(X_train, q)
 
     print(experiment, '-', title)
@@ -53,26 +61,25 @@ for i in range(len(titles)):
     X_train_rec = decoder(X_train_red)
     X_test_rec = decoder(X_test_red)
 
-    plot_original(X_train, y_train, path.join(root, title), 'train_orig')
-    plot_original(X_test, y_test, path.join(root, title), 'test_orig')
-    plot_projection(X_train_red, y_train, path.join(root, title, experiment), 'train_red')
-    plot_original(X_train_rec, y_train, path.join(root, title, experiment), 'train_rec')
-    plot_projection(X_test_red, y_test, path.join(root, title, experiment), 'test_red')
-    plot_original(X_test_rec, y_test, path.join(root, title, experiment), 'test_rec')
-    plot_history(hist_enc, path.join(root, 'histories', title, experiment, 'encoder'), log_scale=True)
-    plot_history(hist_dec, path.join(root, 'histories', title, experiment, 'decoder'), log_scale=True)
+    encoder.save(path.join(output_dir, 'encoder.h5'))
+    decoder.save(path.join(output_dir, 'decoder.h5'))
+    for history, name in zip((hist_enc, hist_dec), ('hist_enc', 'hist_dec')):
+        with h5py.File(path.join(output_dir, name + '.h5'), 'w') as file:
+            for key, value in history.history.items():
+                file.create_dataset(key, data=value)
+
+    with h5py.File(path.join(output_dir, 'results.h5'), "w") as file:
+        file.create_dataset("X_train", data=X_train, compression='gzip')
+        file.create_dataset("X_train_red", data=X_train_red, compression='gzip')
+        file.create_dataset("X_train_rec", data=X_train_rec, compression='gzip')
+        file.create_dataset("y_train", data=y_train, compression='gzip')
+        file.create_dataset("X_test", data=X_test, compression='gzip')
+        file.create_dataset("X_test_red", data=X_test_red, compression='gzip')
+        file.create_dataset("X_test_rec", data=X_test_rec, compression='gzip')
+        file.create_dataset("y_test", data=y_test, compression='gzip')
 
     time_in_sample = tac - tic
     time_out_of_sample = toc - tac
-    compute_metrics(
-        X_train,
-        X_train_red,
-        X_train_rec,
-        X_test,
-        X_test_red,
-        X_test_rec,
-        time_in_sample,
-        time_out_of_sample,
-        title,
-        output_dir=path.join(root, title, experiment)
-    )
+    times = np.array([time_in_sample, time_out_of_sample])
+    np.savetxt(path.join(output_dir, 'times.txt'), times)
+   

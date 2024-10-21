@@ -1,18 +1,26 @@
 import time
 import numpy as np
 import tensorflow as tf
+import os
+import random
 from os import path
+import h5py
 
 from DeepDiffusionAE import DeepDiffusionAE
 from aux_functions import get_sigma
-from experiments.mnist.plot_results import plot_original, plot_projection, plot_interpolations, plot_history
 from experiments.mnist.load_data import get_datasets
-from experiments.mnist.metrics import compute_metrics
 from experiments.utils import build_conv_encoder, build_conv_decoder
 
 
+# ENSURE REPRODUCIBILITY
 seed = 123
+os.environ['PYTHONHASHSEED'] = str(seed)
+random.seed(seed)
+np.random.seed(seed)
 tf.random.set_seed(seed)
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1' # force the use of CPU
+
+
 root = 'experiments/mnist/results/DDAE'
 titles = [
     'Few samples without noise',
@@ -31,15 +39,16 @@ kernel = 'rbf'
 
 for diffusion_weight in diffusion_weights:
     for i in range(len(titles)):
+        title = titles[i]
         q, steps, alpha = q_vals[i], steps_vals[i], alpha_vals[i]
-        experiment = f'percentile_{q}-steps_{steps}-alpha_{alpha}'
+        experiment = f'quantile_{q}-steps_{steps}-alpha_{alpha}'
         experiment = path.join(experiment, f'diffusion_weight_{diffusion_weight:.2f}')
+        output_dir = path.join(root, title, experiment)
         X_train, y_train = datasets_train[i]
         X_test, y_test = datasets_test[i]
         # Añadimos la dimensión de canal
         X_train = np.expand_dims(X_train, axis=-1)
         X_test = np.expand_dims(X_test, axis=-1)
-        title = titles[i]
         sigma = get_sigma(X_train.reshape((X_train.shape[0], -1)), q)
         
         print(experiment, '-', title)  
@@ -66,62 +75,27 @@ for diffusion_weight in diffusion_weights:
         X_train_rec = autoencoder.decode(X_train_red).numpy()
         X_test_rec = autoencoder.decode(X_test_red).numpy()
 
+        autoencoder.encoder.save(path.join(output_dir, 'encoder.h5'))
+        autoencoder.decoder.save(path.join(output_dir, 'decoder.h5'))
+        with h5py.File(path.join(output_dir, 'history.h5'), 'w') as file:
+            for key, value in history.history.items():
+                file.create_dataset(key, data=value)
+
+        X_train = X_train.reshape(X_train.shape[0], -1)
+        X_train_rec = X_train_rec.reshape(X_train_rec.shape[0], -1)
+        X_test = X_test.reshape(X_test.shape[0], -1)
+        X_test_rec = X_test_rec.reshape(X_test_rec.shape[0], -1)
+        with h5py.File(path.join(output_dir, 'results.h5'), "w") as file:
+            file.create_dataset("X_train", data=X_train, compression='gzip')
+            file.create_dataset("X_train_red", data=X_train_red, compression='gzip')
+            file.create_dataset("X_train_rec", data=X_train_rec, compression='gzip')
+            file.create_dataset("y_train", data=y_train, compression='gzip')
+            file.create_dataset("X_test", data=X_test, compression='gzip')
+            file.create_dataset("X_test_red", data=X_test_red, compression='gzip')
+            file.create_dataset("X_test_rec", data=X_test_rec, compression='gzip')
+            file.create_dataset("y_test", data=y_test, compression='gzip')
+
         time_in_sample = tac - tic
         time_out_of_sample = toc - tac
-        
-        plot_original(
-            X_train, y_train,
-            path.join(root, title), 'train_orig',
-            images_per_class=2, grid_shape=(3, 4)
-        )
-        plot_original(
-            X_test, y_test,
-            path.join(root, title), 'test_orig',
-            images_per_class=2, grid_shape=(3, 4)
-        )
-        plot_projection(X_train_red, y_train, path.join(root, title, experiment), 'train_red',)
-        plot_original(
-            X_train_rec, y_train,
-            path.join(root, title, experiment), 'train_rec',
-            images_per_class=2, grid_shape=(3, 4)
-        )
-        plot_projection(X_test_red, y_test, path.join(root, title, experiment), 'test_red',)
-        plot_original(
-            X_test_rec, y_test,
-            path.join(root, title, experiment), 'test_rec',
-            images_per_class=2, grid_shape=(3, 4)
-        )
-        plot_interpolations(
-            X_train_red,
-            y_train,
-            autoencoder.decoder,
-            path.join(root, title, experiment),
-            'train_interp',
-            class_pairs = [(i, i+1) for i in range(0, 5)],
-            n_interpolations=6
-        )
-        plot_interpolations(
-            X_test_red,
-            y_test,
-            autoencoder.decoder,
-            path.join(root, title, experiment),
-            'test_interp',
-            class_pairs = [(i, i+1) for i in range(0, 5)],
-            n_interpolations=6
-        )
-        plot_history(history, path.join(root, 'histories', title, experiment), log_scale=True)
-
-        compute_metrics(
-            X_train,
-            y_train,
-            X_train_red,
-            X_train_rec,
-            X_test,
-            y_test,
-            X_test_red,
-            X_test_rec,
-            time_in_sample,
-            time_out_of_sample,
-            title,
-            output_dir=path.join(root, title, experiment)
-        )
+        times = np.array([time_in_sample, time_out_of_sample])
+        np.savetxt(path.join(output_dir, 'times.txt'), times)
